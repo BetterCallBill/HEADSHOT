@@ -36,6 +36,12 @@
 - 不要提交 `.env`、密钥和 `.data/`。
 - 不要使用 AIHOT 的名字和 Logo。
 
+## 分支与合并
+
+- 每完成一个任务，都从 `test` 切一个新分支来放这次改动，不直接提交到 `main` 或 `test`。分支名用 `<类型>/<简短描述>`，比如 `feat/github-discovery`、`fix/timezone-dst`。
+- 还没有 `test` 分支时，先从 `main` 创建一个。
+- 合并目标是 `test`：pull request 的 base 设为 `test`，并且对新分支执行 `git config branch.<分支>.gh-merge-base test`，让 `gh pr create` 默认指向 `test`。
+
 ## 写代码
 
 匹配周围代码的写法、命名和注释密度。选能清楚解决问题的简单方案，只定义正在使用的抽象。验证改动涉及的重要行为，不为简单的样式改动写测试。
