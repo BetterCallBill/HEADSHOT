@@ -115,7 +115,7 @@
 
 ```bash
 npm run typecheck
-DATABASE_URL=postgres://…/myhot_test npm test     # 库名必须以 _test 或 _ci 结尾
+DATABASE_URL=postgres://…/headshot_test npm test     # 库名必须以 _test 或 _ci 结尾
 node scripts/smoke.ts --base http://localhost:3000   # 站点跑起来以后
 ```
 
