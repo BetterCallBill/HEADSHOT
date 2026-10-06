@@ -40,6 +40,8 @@ export const config = {
   apiBaseUrl: str("API_BASE_URL", "http://127.0.0.1:3001"),
   // Every generated absolute link uses this address, whatever Host a request arrives with.
   siteUrl: str("SITE_URL", SITE.defaultUrl).replace(/\/+$/, ""),
+  /** A private deployment: robots.txt disallows everything and every response says noindex, nofollow. */
+  siteNoindex: bool("SITE_NOINDEX", false),
   selectedVisibleAfterSeconds: int("SELECTED_VISIBLE_AFTER_SECONDS", 180),
   egressProxyUrl: env.EGRESS_PROXY_URL || null,
   allowPrivateNetworkFetch: bool("ALLOW_PRIVATE_NETWORK_FETCH", false),

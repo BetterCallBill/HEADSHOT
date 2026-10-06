@@ -55,6 +55,7 @@ async function sendFile(req: FastifyRequest, reply: FastifyReply, file: string, 
 }
 
 function robotsTxt(): string {
+  if (config.siteNoindex) return "User-agent: *\nDisallow: /\n";
   return [
     "User-agent: *",
     "Allow: /api/v1/",

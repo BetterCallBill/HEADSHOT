@@ -12,6 +12,8 @@ import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
 const PORT = Number(process.env.WEB_PORT || process.env.PORT || 3000);
 const HOST = process.env.WEB_HOST || "127.0.0.1";
 const API = new URL(process.env.API_BASE_URL || "http://127.0.0.1:3001");
+/** A private deployment (SITE_NOINDEX): every response, pages, assets and proxied api answers alike, says noindex. */
+const NOINDEX = /^(1|true)$/i.test(process.env.SITE_NOINDEX ?? "");
 /**
  * Whether a reverse proxy in front (Caddy, nginx) records the visitor in X-Forwarded-For. Without one
  * the header is never believed: a visitor could name any address and slip past the api's per-visitor
@@ -68,6 +70,7 @@ async function serveStatic(pathname: string, res: import("node:http").ServerResp
 
 // One bad request must never take the process down: answer it and keep serving.
 const server = createServer((req, res) => {
+  if (NOINDEX) res.setHeader("X-Robots-Tag", "noindex, nofollow");
   handle(req, res).catch((error: unknown) => {
     const bad = error instanceof BadRequest || error instanceof URIError;
     if (!bad) console.error(JSON.stringify({ level: "error", msg: "web request failed", path: (req.url ?? "").split("?")[0]!.slice(0, 200), error: String(error).slice(0, 500) }));
