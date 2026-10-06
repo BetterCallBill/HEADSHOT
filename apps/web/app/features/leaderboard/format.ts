@@ -1,5 +1,5 @@
 import type { LbPrice } from "@aihot/contracts/leaderboard";
-import { beijingDate, beijingTime } from "@aihot/contracts/time";
+import { BEIJING, zonedDate, zonedTime } from "@aihot/contracts/time";
 
 /** ≥ ¥0.1 → up to two decimals; smaller amounts keep three significant digits. */
 export function yuan(v: number | null | undefined): string {
@@ -16,7 +16,7 @@ export function listPrice(v: number | null, currency: LbPrice["currency"]): stri
 /** "09/26 20:00" in Beijing time, as the leaderboard has always shown update times. */
 export function shortStamp(iso: string | null | undefined): string {
   if (!iso) return "待核实";
-  return `${beijingDate(iso).slice(5).replace("-", "/")} ${beijingTime(iso)}`;
+  return `${zonedDate(iso, BEIJING).slice(5).replace("-", "/")} ${zonedTime(iso, BEIJING)}`;
 }
 
 export function pct(weight: number, digits = 1): string {

@@ -10,6 +10,7 @@ import { stopBoss } from "@aihot/backend/jobs/queue";
 import { publishArticle } from "@aihot/backend/publication/publish";
 import { loadReport } from "@aihot/backend/publication/reports";
 import { composeDaily, dueDaily, dueMonthly, dueWeekly } from "@aihot/backend/reports/compose";
+import { siteAt } from "@aihot/contracts/time";
 
 const T = tag();
 const SOURCE = `test-reports-${T}`;
@@ -20,17 +21,18 @@ after(async () => {
   await closeDb();
 });
 
-const bj = (s: string) => new Date(`${s}+08:00`);
+/** A wall-clock time on the site's clock (Sydney: AEST until 4 Oct 2026, AEDT after). */
+const local = (s: string) => siteAt(s.slice(0, 10), s.slice(11));
 
 test("a late run writes the issue that was due, not today's", () => {
-  assert.equal(dueDaily(bj("2026-09-29T08:00:05")), "2026-09-29");
-  assert.equal(dueDaily(bj("2026-09-30T01:00:00")), "2026-09-29", "the 29th's run delayed past midnight");
-  assert.equal(dueWeekly(bj("2026-09-28T10:00:00")), "2026-W39");
-  assert.equal(dueWeekly(bj("2026-10-05T09:00:00")), "2026-W39", "Monday before 10:00: the next week is not due yet");
-  assert.equal(dueWeekly(bj("2026-10-05T10:01:00")), "2026-W40");
-  assert.equal(dueMonthly(bj("2026-10-01T10:30:00")), "2026-09");
-  assert.equal(dueMonthly(bj("2026-10-01T09:00:00")), "2026-08");
-  assert.equal(dueMonthly(bj("2027-01-15T12:00:00")), "2026-12");
+  assert.equal(dueDaily(local("2026-09-29T07:00:05")), "2026-09-29");
+  assert.equal(dueDaily(local("2026-09-30T01:00:00")), "2026-09-29", "the 29th's run delayed past midnight");
+  assert.equal(dueWeekly(local("2026-09-28T10:00:00")), "2026-W39");
+  assert.equal(dueWeekly(local("2026-10-05T09:00:00")), "2026-W39", "Monday before 10:00: the next week is not due yet");
+  assert.equal(dueWeekly(local("2026-10-05T10:01:00")), "2026-W40");
+  assert.equal(dueMonthly(local("2026-10-01T10:30:00")), "2026-09");
+  assert.equal(dueMonthly(local("2026-10-01T09:00:00")), "2026-08");
+  assert.equal(dueMonthly(local("2027-01-15T12:00:00")), "2026-12");
 });
 
 test("a daily with nothing in its window is refused, not published empty", async () => {

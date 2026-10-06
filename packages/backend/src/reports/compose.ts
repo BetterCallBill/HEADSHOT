@@ -1,4 +1,4 @@
-// Daily, weekly and monthly reports. Windows are Beijing calendar based and written into the report;
+// Daily, weekly and monthly reports. Windows follow the site zone's calendar and are written into the report;
 // missed schedule points are caught up; regeneration creates a revision. The editors' prompts are in
 // the industry pack (industry/prompts/report-*.md), the sections follow its categories.
 import { z } from "zod";
@@ -6,7 +6,7 @@ import { SITE } from "@aihot/industry/site";
 import { CATEGORIES } from "@aihot/industry/taxonomy";
 import { promptText, promptVersion } from "../editorial/prompts.ts";
 import { modelFor } from "../editorial/models.ts";
-import { addDays, beijingDate, beijingMidnight, isoWeekLabel, isoWeekRange } from "@aihot/contracts/time";
+import { addDays, DAILY_REPORT_TIME, isoWeekLabel, isoWeekRange, siteAt, siteDate, siteMidnight, siteTime } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { Conflict } from "../audit.ts";
 import { chatJson, ModelOutputError } from "../providers/llm.ts";
@@ -152,12 +152,18 @@ async function saveReport(kind: ReportKind, key: string, start: Date, end: Date,
   });
 }
 
-/** Daily report for Beijing date D covers [D-1 08:00, D 08:00) Beijing time. */
+/**
+ * The daily report for date D covers [D-1 07:00, D 07:00) on the site's clock (SITE.dailyReportHour). Both
+ * ends are read on the clock, so the window is 23 or 25 hours long across a daylight-saving change.
+ */
+export function dailyWindow(date: string): { start: Date; end: Date } {
+  return { start: siteAt(addDays(date, -1), DAILY_REPORT_TIME), end: siteAt(date, DAILY_REPORT_TIME) };
+}
+
 export async function composeDaily(date: string, reason = "scheduled"): Promise<{ key: string; entries: number }> {
   const previous = await savedReport("daily", date);
   if (previous && automatic(reason)) return { key: date, entries: previous.entries };
-  const end = new Date(beijingMidnight(date).getTime() + 8 * 3600 * 1000);
-  const start = new Date(end.getTime() - 86400000);
+  const { start, end } = dailyWindow(date);
   const covered = await recentlyCovered("daily", date);
   const all = await candidates(start, end);
   const fresh = all.filter((c) => !covered.has(c.factKey) && !covered.has(`a:${c.itemId}`));
@@ -222,8 +228,8 @@ export function periodPrompt(kind: "weekly" | "monthly", startDate: string, endD
 async function composePeriod(kind: "weekly" | "monthly", key: string, startDate: string, endDateInclusive: string, reason: string) {
   const previous = await savedReport(kind, key);
   if (previous && automatic(reason)) return { key, entries: previous.entries };
-  const start = beijingMidnight(startDate);
-  const end = beijingMidnight(addDays(endDateInclusive, 1));
+  const start = siteMidnight(startDate);
+  const end = siteMidnight(addDays(endDateInclusive, 1));
   const all = await candidates(start, end);
   const top = all.slice(0, kind === "weekly" ? 40 : 60);
   const dailyCount = (await sql<{ n: number }[]>`SELECT count(*) AS n FROM reports WHERE kind = 'daily' AND key >= ${startDate} AND key <= ${endDateInclusive}`)[0]?.n ?? 0;
@@ -278,29 +284,29 @@ export async function composeMonthly(label: string, reason = "scheduled") {
   return composePeriod("monthly", label, start, addDays(next, -1), reason);
 }
 
-const bjParts = (now: Date) => {
-  const iso = new Date(now.getTime() + 8 * 3600000).toISOString();
-  return { hour: Number(iso.slice(11, 13)), minute: Number(iso.slice(14, 16)) };
+const clockParts = (now: Date) => {
+  const [hour, minute] = siteTime(now).split(":").map(Number) as [number, number];
+  return { hour, minute };
 };
 
-/** The newest daily due by `now`: today's from 08:00 Beijing time, yesterday's before. */
+/** The newest daily due by `now`: today's from the daily hour on the site's clock, yesterday's before. */
 export function dueDaily(now = new Date()): string {
-  const today = beijingDate(now);
-  return bjParts(now).hour >= 8 ? today : addDays(today, -1);
+  const today = siteDate(now);
+  return clockParts(now).hour >= SITE.dailyReportHour ? today : addDays(today, -1);
 }
 
 /** The newest weekly due by `now`: the last complete ISO week from Monday 10:00, the one before until then. */
 export function dueWeekly(now = new Date()): string {
-  const today = beijingDate(now);
+  const today = siteDate(now);
   const dow = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7;
-  const due = dow > 0 || bjParts(now).hour >= 10;
+  const due = dow > 0 || clockParts(now).hour >= 10;
   return isoWeekLabel(addDays(today, -dow - (due ? 7 : 14)));
 }
 
 /** The newest monthly due by `now`: the last complete month from the 1st 10:30, the one before until then. */
 export function dueMonthly(now = new Date()): string {
-  const [y, m, d] = beijingDate(now).split("-").map(Number) as [number, number, number];
-  const { hour, minute } = bjParts(now);
+  const [y, m, d] = siteDate(now).split("-").map(Number) as [number, number, number];
+  const { hour, minute } = clockParts(now);
   const due = d > 1 || hour > 10 || (hour === 10 && minute >= 30);
   const back = due ? 1 : 2;
   const month = (y * 12 + (m - 1) - back);

@@ -70,7 +70,7 @@ before(async () => {
     (${DUP_SOURCE}, 'Test feed', 'rss', ${sql.json({ feedUrl: `${base}/dup.xml` })}, 'T1', 'editorial', ${cursor}, '2100-01-01'),
     (${NOTES_SOURCE}, 'Test release notes', 'rss', ${sql.json({ feedUrl: `${base}/notes.xml`, preserveUrlFragment: true })}, 'T1', 'editorial', ${cursor}, '2100-01-01'),
     (${GARBLED_SOURCE}, 'Test garbling feed', 'rss', ${sql.json({ feedUrl: `${base}/garbled.xml` })}, 'T1', 'hot_signal', ${cursor}, '2100-01-01'),
-    (${CHANGELOG_SOURCE}, 'Test changelog', 'web_list', ${sql.json({ url: `${base}/updates/`, baseUrl: `${base}/updates/`, parseMode: "docusaurus_changelog", allowUrlPrefixes: [`${base}/updates/`], preserveUrlFragment: true })}, 'T1', 'editorial', ${cursor}, '2100-01-01')`;
+    (${CHANGELOG_SOURCE}, 'Test changelog', 'web_list', ${sql.json({ url: `${base}/updates/`, baseUrl: `${base}/updates/`, parseMode: "docusaurus_changelog", publishedAtUtcOffset: "+08:00", allowUrlPrefixes: [`${base}/updates/`], preserveUrlFragment: true })}, 'T1', 'editorial', ${cursor}, '2100-01-01')`;
 });
 after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));

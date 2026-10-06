@@ -18,6 +18,15 @@ export const SITE = {
   tagline: "值得关注的 AI 动态",
   /** 界面语言（HTML lang、og:locale）。 */
   locale: "zh-CN",
+  /**
+   * 站点时区（IANA 名称，比如 Asia/Shanghai、Australia/Sydney）。“今天”、日报周报月报的日期和时间窗、
+   * 定时任务、页面上显示的时间都按它算；有夏令时的时区也可以。上线以后再改，已经出过的日报不会跟着变。
+   */
+  timeZone: "Australia/Sydney",
+  /** 时区在文案里的叫法，比如“北京时间”“悉尼时间”。 */
+  timeZoneLabel: "悉尼时间",
+  /** 日报几点出（站点时区的整点，0–23）。日期为 D 的日报收录 D 前一天这个时刻到 D 当天这个时刻的内容。 */
+  dailyReportHour: 7,
   /** 默认域名，只在没设置 SITE_URL 时使用。 */
   defaultUrl: "http://localhost:3000",
   /**
@@ -47,13 +56,13 @@ export const ABOUT = {
   /** 大标题：第一行正常颜色，第二行强调色。 */
   headline: ["AI 圈每天都有新动静，", "值得看的，只有几条。"] as [string, string],
   /** 标题下面的一段话。{sources} 会换成实时的信源数。 */
-  lead: `${SITE.name} 替你盯着 {sources} 个信源：抓取、归并、打分、精选，每天早上 8 点出一份日报。免费，不用注册。`,
+  lead: `${SITE.name} 替你盯着 {sources} 个信源：抓取、归并、打分、精选，每天早上 ${SITE.dailyReportHour} 点出一份日报。免费，不用注册。`,
   /** 信源河动画下面的四个环节。 */
   steps: {
     collect: "官方博客、媒体、X 账号、公众号和各类订阅源都在看；活跃的源 15 分钟就看一次。",
     store: "抓到的都存下来，同一件事的报道归到一起；只计入热度的账号也算在内，热点榜就是从这里算出来的。",
     select: "模型先看是不是这个行业的事、有没有实际信息，再写中文标题、摘要和推荐理由；营销稿和重复转发进不来。",
-    publish: "每天 08:00 出日报，周一出周报，每月 1 日出月报；最精选的几条可以推到飞书群。",
+    publish: `每天 ${String(SITE.dailyReportHour).padStart(2, "0")}:00 出日报，周一出周报，每月 1 日出月报；最精选的几条可以推到飞书群。`,
   },
   /**
    * 作者块（选填），null 就不显示。

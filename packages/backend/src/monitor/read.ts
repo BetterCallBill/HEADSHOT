@@ -2,7 +2,8 @@ import { siteUrl } from "../publication/links.ts";
 // Codex reset monitor read layer: the v1 codex-resets snapshot and the /codex-reset page read the
 // same events. Announcement, in-progress, confirmation and "should have landed" stay distinct;
 // passing an announced time never turns into a confirmation.
-import { addDays, beijingDate, beijingMidnight } from "@aihot/contracts/time";
+// The monitor speaks Beijing time whatever the site's zone (its API declares timezone "Asia/Shanghai").
+import { addDays, BEIJING, zonedDate, zonedInstant } from "@aihot/contracts/time";
 import type { CodexCalendarMark, CodexResetMonitor, CodexResetPageData, CodexResetsSnapshot } from "@aihot/contracts/monitor";
 import { sql, type Db } from "../db.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
@@ -212,7 +213,7 @@ export const RECENT_DAYS = 7;
  */
 export async function codexResetsRecent(now = Date.now()): Promise<CodexResetsSnapshot> {
   // Whole Beijing days, so the answer (and its ETag) only changes when the content does.
-  const from = beijingMidnight(addDays(beijingDate(now), -RECENT_DAYS)).getTime();
+  const from = zonedInstant(addDays(zonedDate(now, BEIJING), -RECENT_DAYS), "00:00", BEIJING).getTime();
   return snapshot(now, from);
 }
 
@@ -263,7 +264,7 @@ async function snapshot(now: number, from?: number): Promise<CodexResetsSnapshot
   return {
     schemaVersion: 1 as const,
     timezone: "Asia/Shanghai" as const,
-    today: beijingDate(now),
+    today: zonedDate(now, BEIJING),
     checkedAt: monitor?.lastVerifiedAt ?? null,
     historyFrom: bjIso(new Date(Math.max(from ?? -Infinity, Date.parse(state.get("history")?.from ?? "2026-06-12T00:00:00+08:00")))),
     count: eventJsons.length,
@@ -352,6 +353,6 @@ export async function codexResetVersion(now = Date.now()) {
   return {
     version: versionHash(events.map((e) => [e.id, bjIso(e.updated_at), e.presentation ? presentationStatus(e, now) : undefined]), outage?.id ?? null, monitor),
     checkedAt: monitor?.lastVerifiedAt ?? null,
-    today: beijingDate(now),
+    today: zonedDate(now, BEIJING),
   };
 }

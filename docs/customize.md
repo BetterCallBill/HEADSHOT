@@ -19,6 +19,8 @@
 - `homeTitle`、`description`、`tagline`：首页标题、一句话介绍、侧边栏小字。
 - `mcpPrefix`：MCP 工具名前缀，比如 `lawhot` 会得到 `lawhot_get_latest`。有人接入以后不要再改。
 - `crawlerName`：抓取信源时报的名字，别用别人的站名。
+- `timeZone`、`timeZoneLabel`：站点时区（IANA 名称，比如 `Asia/Shanghai`、`Australia/Sydney`）和它在文案里的叫法。“今天”、日报周报月报的日期、定时任务和页面上的时间都按它算，有夏令时的时区也可以。上线后再改，已经出过的日报不会跟着变。
+- `dailyReportHour`：日报几点出（站点时区的整点）。
 - `ABOUT`：关于页的大标题、四个环节的说明、作者块（可选）、版权说明。
 - `icp`：中国大陆网站的备案号，填了就显示在页脚。
 

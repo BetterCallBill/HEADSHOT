@@ -1,5 +1,6 @@
 // Web list pages: HTML with selectors, Markdown through Jina Reader, and Docusaurus changelogs.
 import * as cheerio from "cheerio";
+import { siteAt } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { guardedFetch } from "../lib/http-fetch.ts";
 import { normalizeUrl } from "../lib/url.ts";
@@ -14,18 +15,22 @@ const JINA_PREFIX = "https://r.jina.ai/";
 /** A time followed by its zone: "10:00Z", "10:00:00+08:00", "10:00:00 +0000", "10:00:00 GMT". */
 const EXPLICIT_ZONE = /\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(?:Z|[+-]\d{2}:?\d{2}|GMT|UTC)\b/i;
 
-function atOffset(y: string | number, mo: string | number, d: string | number, h: string | number, mi: string | number, s: string | number, utcOffset: string): Date | null {
+/** The wall time in the source's fixed offset, or on the site's clock (with its daylight saving) when it has none. */
+function atOffset(y: string | number, mo: string | number, d: string | number, h: string | number, mi: string | number, s: string | number, utcOffset?: string): Date | null {
   const p = (n: string | number) => String(n).padStart(2, "0");
-  const t = Date.parse(`${y}-${p(mo)}-${p(d)}T${p(h)}:${p(mi)}:${p(s)}${utcOffset}`);
+  const date = `${y}-${p(mo)}-${p(d)}`;
+  const time = `${p(h)}:${p(mi)}:${p(s)}`;
+  const t = utcOffset ? Date.parse(`${date}T${time}${utcOffset}`) : siteAt(date, time).getTime();
   return Number.isFinite(t) ? new Date(t) : null;
 }
 
 /**
  * A published date as a list page or article prints it. Date.parse is kept only where it reads the same
  * on every host: a time with its zone, and an ISO date alone (UTC midnight). Anything else it would read
- * in the server's local zone (UTC in Docker), so "2026-09-26 10:00" is read in the source's offset instead.
+ * in the server's local zone (UTC in Docker), so "2026-09-26 10:00" is read in the source's offset
+ * (publishedAtUtcOffset) instead, or in the site's zone when the source sets none.
  */
-export function parseLooseDate(value: string | null | undefined, utcOffset = "+08:00"): Date | null {
+export function parseLooseDate(value: string | null | undefined, utcOffset?: string): Date | null {
   if (!value) return null;
   const v = value.trim();
   if (!v) return null;
@@ -209,11 +214,10 @@ export function fromHtml(html: string, base: string, source: SourceRow): Candida
 const DATE_HEADING = /^(?:[^\d:：]{1,12}[:：])?\s*(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})日?$/;
 
 /** The day a date heading names, at midnight in the source's offset (Date.parse would read "时间: …" in the host's zone). */
-function headingDate(title: string, utcOffset = "+08:00"): Date | null | undefined {
+function headingDate(title: string, utcOffset?: string): Date | null | undefined {
   const m = DATE_HEADING.exec(title);
   if (!m) return undefined;
-  const t = Date.parse(`${m[1]}-${m[2]!.padStart(2, "0")}-${m[3]!.padStart(2, "0")}T00:00:00${utcOffset}`);
-  return Number.isFinite(t) ? new Date(t) : null;
+  return atOffset(m[1]!, m[2]!, m[3]!, 0, 0, 0, utcOffset);
 }
 
 function fromDocusaurusChangelog(html: string, base: string, source: SourceRow): Candidate[] {
