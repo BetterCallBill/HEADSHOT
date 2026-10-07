@@ -45,6 +45,25 @@ docker compose --profile https up -d --build
 
 MCP 默认接受 `SITE_URL` 的主机以及 `localhost`、`127.0.0.1`、`[::1]`。额外主机用 `MCP_ALLOWED_HOSTS` 配置，以逗号分隔，例如 `extra.example:8443,[2001:db8::1]`。主机名不区分大小写，IPv6 必须加方括号；可带 0–65535 的十进制端口，匹配时忽略端口。包含路径、用户信息或非法端口的配置不会生效。`127.1` 等别名需要明确列入；此配置只影响 Host 校验，不扩大浏览器 Origin 许可。
 
+### 只给自己用：Tailscale 私人部署
+
+不对公网开放时，网站只监听本机，再用 Tailscale Serve 发到自己的 tailnet 里（手机装上 Tailscale 也能打开）。`.env`：
+
+```bash
+PORT=127.0.0.1:3000        # 只监听本机
+SITE_NOINDEX=true          # robots.txt 禁止全部抓取，所有响应带 X-Robots-Tag: noindex, nofollow
+TRUST_PROXY=true           # 访客地址从 Tailscale Serve 转来的请求头里读
+SITE_URL=https://<机器名>.<tailnet>.ts.net:8443
+```
+
+然后 `docker compose up -d`，再执行：
+
+```bash
+tailscale serve --bg --https=8443 3000     # 只在 tailnet 内可见；关掉：tailscale serve --https=8443 off
+```
+
+端口 8443 可以换；这台机器的 `/`（443）已经给别的服务用时，换个端口就不会互相覆盖。`tailscale serve status` 看当前的映射。不要用 `tailscale funnel`，那会把网站开放到公网。
+
 ### 更新
 
 先按下节备份数据库。构建完成后停止旧服务，再运行迁移和新版服务：

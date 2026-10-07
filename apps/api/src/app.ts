@@ -2,6 +2,7 @@ import { FEATURES } from "@aihot/industry/features";
 import Fastify, { type FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { OAUTH_PROBE_PATHS, resolveRedirect } from "@aihot/contracts/http-policy";
+import { config } from "@aihot/backend/config";
 import { sql } from "@aihot/backend/db";
 import { registerSite } from "./routes/site.ts";
 import { registerLeaderboard } from "./routes/leaderboard.ts";
@@ -40,6 +41,13 @@ export async function buildApp(): Promise<FastifyInstance> {
       req.log.warn({ method: req.method, path, status: reply.statusCode, ms }, "request");
     }
   });
+
+  // A private deployment keeps every answer out of search engines, whichever route wrote it.
+  if (config.siteNoindex) {
+    app.addHook("onSend", async (_req, reply) => {
+      reply.header("X-Robots-Tag", "noindex, nofollow");
+    });
+  }
 
   // Central redirect table (shared with the web server).
   app.addHook("onRequest", async (req, reply) => {
