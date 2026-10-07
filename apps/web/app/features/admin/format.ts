@@ -1,12 +1,12 @@
-// Admin display helpers: Beijing wall-clock times, relative ages, compact numbers.
-const BJ = 8 * 3600_000;
+// Admin display helpers: wall-clock times in the site's zone, relative ages, compact numbers.
+import { siteDate, siteTime } from "@aihot/contracts/time";
 
 export function bj(iso: string | Date | null | undefined, withYear = false): string {
   if (!iso) return "—";
-  const d = new Date(new Date(iso).getTime() + BJ);
-  if (Number.isNaN(d.getTime())) return "—";
-  const s = d.toISOString();
-  return `${withYear ? `${s.slice(0, 4)}-` : ""}${s.slice(5, 10)} ${s.slice(11, 16)}`;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "—";
+  const date = siteDate(t);
+  return `${withYear ? `${date.slice(0, 4)}-` : ""}${date.slice(5)} ${siteTime(t)}`;
 }
 
 export function ago(iso: string | Date | null | undefined, now = Date.now()): string {

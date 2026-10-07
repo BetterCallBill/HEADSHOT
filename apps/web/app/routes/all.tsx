@@ -5,6 +5,7 @@ import type { PoolResponse } from "@aihot/contracts/site";
 import { isCategoryKey, isChannelKey } from "@aihot/contracts/taxonomy";
 import { loadOr404, queryString } from "../lib/api.server";
 import { listPath, pageMeta } from "../lib/seo";
+import { beijingTime } from "../lib/format";
 import { CategoryTabs, SearchField } from "../features/feed/Filters";
 import { PillTabs } from "../components/ui/Tabs";
 import { DayList, Pagination } from "../features/feed/DayList";
@@ -71,7 +72,7 @@ export default function AllPage() {
     return `/all?${sp}`;
   };
   const title = f.q ? `搜索“${f.q}”` : f.tag ? `#${f.tag}` : null;
-  const updated = new Date(data.freshness).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Shanghai" });
+  const updated = beijingTime(data.freshness);
 
   return (
     <div className="pb-6">

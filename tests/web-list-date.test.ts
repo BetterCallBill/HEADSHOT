@@ -1,10 +1,11 @@
-// Published dates on list pages: a date without a zone is read in the source's offset, whatever zone
-// the server runs in (Docker runs in UTC; run this file with TZ=UTC and TZ=Asia/Shanghai to see both).
+// Published dates on list pages: a date without a zone is read in the source's offset (here a source set
+// to +08:00), whatever zone the server runs in (Docker runs in UTC; run this file with TZ=UTC and
+// TZ=Asia/Shanghai to see both). A source with no offset reads on the site's clock (time-zone.test.ts).
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseLooseDate } from "@aihot/backend/sources/web-list";
 
-const iso = (v: string, offset?: string) => parseLooseDate(v, offset)?.toISOString() ?? null;
+const iso = (v: string, offset = "+08:00") => parseLooseDate(v, offset)?.toISOString() ?? null;
 
 test("a date and time without a zone is in the source's offset, not the server's", () => {
   assert.equal(iso("2026-09-26 10:00"), "2026-09-26T02:00:00.000Z");

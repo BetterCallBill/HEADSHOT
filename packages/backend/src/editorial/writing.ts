@@ -1,6 +1,7 @@
 // The writing side of the analysis: the prefilter's and the content understanding's inputs, the
 // title/summary prompts for everything else, the output parsing and the deterministic guards. The
 // wording lives in the industry pack (industry/prompts/); a failed guard falls back without a repair call.
+import { siteDate } from "@aihot/contracts/time";
 import { IDENTITY_CONTEXT_ALIASES, IDENTITY_LEXICON, PUBLISHER_DOMAINS } from "@aihot/industry/taxonomy";
 import { onlyXArticleLink } from "../sources/x.ts";
 import type { AnalyzeInputArticle } from "./input.ts";
@@ -277,7 +278,7 @@ const sourceName = (name?: string) => name?.trim() || "（未注明）";
 
 function anchorDate(d: Date | undefined): string {
   if (!d || Number.isNaN(d.getTime())) return "未注明";
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  return siteDate(d);
 }
 
 export function buildArticlePrompt(input: TranslateInput): string {

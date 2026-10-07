@@ -4,7 +4,7 @@ import { selectedCondition, pendingReleaseCondition, listedCondition } from "./s
 // development's first appearance, so a new development brings it back up while a representative swap
 // never moves it; the representative is the first-party pick of the story's initiating fact.
 import type { GroupInfo, TimelineCard, TimelineFilters, TimelineResponse } from "@aihot/contracts/site";
-import { beijingDate, beijingMidnight } from "@aihot/contracts/time";
+import { addDays, beijingDate, beijingMidnight } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { decodeCursor, encodeCursor, InvalidCursorError, queryBinding } from "../lib/cursor.ts";
 import {
@@ -104,7 +104,7 @@ async function queryGroupedAnchors(q: TimelineQuery, now: Date) {
   return rows;
 }
 
-/** Counts requested Beijing days over anchors already sorted newest first. */
+/** Counts requested days (site zone; 23 or 25 hours across a clock change) over anchors already sorted newest first. */
 export function countTimelineDays(grouped: readonly { anchor: number }[], days: ReadonlySet<string>): Record<string, number> {
   const firstBelow = (bound: number) => {
     let lo = 0, hi = grouped.length;
@@ -117,8 +117,7 @@ export function countTimelineDays(grouped: readonly { anchor: number }[], days: 
   };
   const counts: Record<string, number> = {};
   for (const day of days) {
-    const start = beijingMidnight(day).getTime();
-    const count = firstBelow(start) - firstBelow(start + 86_400_000);
+    const count = firstBelow(beijingMidnight(day).getTime()) - firstBelow(beijingMidnight(addDays(day, 1)).getTime());
     if (count) counts[day] = count;
   }
   return counts;

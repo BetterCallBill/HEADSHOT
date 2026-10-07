@@ -29,7 +29,7 @@ export function fullDateTime(iso: string): string {
   return `${beijingDate(iso)} ${beijingTime(iso)}`;
 }
 
-/** "9月24日 10:51" (Beijing), for lists that span days. */
+/** "9月24日 10:51" on the site's clock, for lists that span days. */
 export function monthDayTime(iso: string): string {
   const [, m, d] = beijingDate(iso).split("-").map(Number) as [number, number, number];
   return `${m}月${d}日 ${beijingTime(iso)}`;

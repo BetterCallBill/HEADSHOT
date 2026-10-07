@@ -20,7 +20,7 @@ import { RecognitionSchema, type Recognition, type Proposition } from "@aihot/ba
 import { collectPosts, flushResetPushes, monitorTick, processPending } from "@aihot/backend/monitor/scan";
 import { estimateFor, scheduleFrom } from "@aihot/backend/monitor/time";
 import { relinkPost, reviewReceipt, updateMonitorEvent } from "@aihot/backend/admin/monitor";
-import { beijingDate } from "@aihot/contracts/time";
+import { BEIJING, zonedDate } from "@aihot/contracts/time";
 
 let answer: (url: string) => unknown = () => ({ tweets: [] });
 let modelAnswer: unknown = {};
@@ -257,7 +257,7 @@ test("correcting an older reset does not make it the most recent completed reset
   const older = await announcement(new Date(now - 7 * 86400_000));
   const newer = await announcement(new Date(now - 86400_000));
   for (const [eventId, days] of [[older.eventId, 7], [newer.eventId, 1]] as const) {
-    await reviewReceipt(eventId, { occurredOn: beijingDate(now - days * 86400_000), reason: "verified day", version: await version(eventId) }, "test");
+    await reviewReceipt(eventId, { occurredOn: zonedDate(now - days * 86400_000, BEIJING), reason: "verified day", version: await version(eventId) }, "test");
   }
   await updateMonitorEvent(older.eventId, { patch: { audienceZh: "更正历史适用范围" }, reason: "historical correction", version: await version(older.eventId) }, "test");
   assert.equal((await codexResetPage(now)).lastLanded?.id, newer.eventId);
@@ -266,11 +266,11 @@ test("correcting an older reset does not make it the most recent completed reset
 test("a confirmed card does not promote a same-day estimated reset in the last reset statistic", async () => {
   const now = Date.now();
   const known = await announcement(new Date(now - 7 * 86400_000));
-  await reviewReceipt(known.eventId, { occurredOn: beijingDate(now - 7 * 86400_000), reason: "verified reset", version: await version(known.eventId) }, "test");
+  await reviewReceipt(known.eventId, { occurredOn: zonedDate(now - 7 * 86400_000, BEIJING), reason: "verified reset", version: await version(known.eventId) }, "test");
   const estimated = await announcement(new Date(now - 3 * 86400_000));
   const day = (await codexResetPage(now)).calendar.find((m) => m.eventId === estimated.eventId)!.date;
   const card = await announcement(new Date(now - 3 * 86400_000));
   await updateMonitorEvent(card.eventId, { patch: { type: "reset_credit" }, reason: "card", version: await version(card.eventId) }, "test");
   await reviewReceipt(card.eventId, { occurredOn: day, reason: "verified card", version: await version(card.eventId) }, "test");
-  assert.equal((await codexResetPage(now)).stats.lastResetDate, beijingDate(now - 7 * 86400_000));
+  assert.equal((await codexResetPage(now)).stats.lastResetDate, zonedDate(now - 7 * 86400_000, BEIJING));
 });

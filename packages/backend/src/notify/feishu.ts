@@ -78,13 +78,13 @@ export interface Finding {
 
 const MARK: Record<Exclude<Level, "digest">, string> = { now: "🔴", today: "🟠" };
 
-/** "9月29日" in Beijing time. */
+/** "9月29日" on the site's clock. */
 export function beijingDay(at: Date | string | number): string {
   const [, m, d] = beijingDate(at).split("-").map(Number);
   return `${m}月${d}日`;
 }
 
-/** "9月29日 13:40" in Beijing time. */
+/** "9月29日 13:40" on the site's clock. */
 export const beijingStamp = (at: Date | string | number) => `${beijingDay(at)} ${beijingTime(at)}`;
 
 export function duration(ms: number): string {

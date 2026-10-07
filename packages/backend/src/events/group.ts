@@ -14,7 +14,7 @@
 // order sees what live grouping would have seen. Discussion posts that found no story get another
 // look when a report founds a fact close to them (rematchSignals); history (isHistorical) founds no
 // event. Runs serially (queue concurrency 1).
-import { beijingDate } from "@aihot/contracts/time";
+import { beijingDate, beijingMidnight } from "@aihot/contracts/time";
 import { candidateViews, recallFacts, relatedPosts, vectorsFor } from "./recall.ts";
 import { consolidate, liveStory, type Consolidation } from "./consolidate.ts";
 import { modelFor } from "../editorial/models.ts";
@@ -109,7 +109,7 @@ async function createStory(db: Db, title: string, at: Date): Promise<number> {
 }
 
 async function createFact(db: Db, storyId: number, title: string, frame: Record<string, any> | null, at: Date): Promise<number> {
-  let occurred = typeof frame?.occurredAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(frame.occurredAt) ? new Date(`${frame.occurredAt}T00:00:00+08:00`) : null;
+  let occurred = typeof frame?.occurredAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(frame.occurredAt) ? beijingMidnight(frame.occurredAt) : null;
   if (occurred && (!Number.isFinite(+occurred) || beijingDate(occurred) !== frame!.occurredAt)) occurred = null;
   const [row] = await db<{ id: number }[]>`
     INSERT INTO facts (public_id, story_id, title, subject, action, object, occurred_at, created_at)

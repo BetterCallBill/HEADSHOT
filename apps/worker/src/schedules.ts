@@ -1,6 +1,8 @@
-// Cron-style schedules (Asia/Shanghai). Each run is recorded in job_runs; missed slots run once.
+// Cron-style schedules in the site's time zone (SITE.timeZone). Each run is recorded in job_runs; missed
+// slots run once.
 import type { PgBoss } from "pg-boss";
 import { FEATURES } from "@aihot/industry/features";
+import { SITE } from "@aihot/industry/site";
 import { credential } from "@aihot/backend/config";
 import { ensureQueue, recordRun } from "@aihot/backend/jobs/queue";
 import { sweepUnprocessed } from "@aihot/backend/jobs/content";
@@ -40,7 +42,7 @@ export const SCHEDULES: Scheduled[] = [
   { name: "hot.snapshot", cron: "2 * * * *", run: () => snapshotHeat() },
   { name: "stories.status", cron: "7 * * * *", run: refreshStoryStatuses },
   { name: "stories.links", cron: "12 * * * *", run: linkRelatedStories },
-  { name: "reports.daily", cron: "0 8 * * *", missed: "once", run: () => composeDaily(dueDaily()) },
+  { name: "reports.daily", cron: `0 ${SITE.dailyReportHour} * * *`, missed: "once", run: () => composeDaily(dueDaily()) },
   { name: "reports.weekly", cron: "0 10 * * 1", missed: "once", run: () => composeWeekly(dueWeekly()) },
   {
     name: "reports.monthly",
@@ -94,7 +96,7 @@ export async function registerSchedules(boss: PgBoss) {
   for (const s of SCHEDULES) {
     const queue = `cron.${s.name}`;
     await ensureQueue(queue, { policy: "singleton", retryLimit: 1, expireInSeconds: 3600 });
-    await boss.schedule(queue, s.cron, {}, { tz: "Asia/Shanghai", missed: s.missed ?? "skip" });
+    await boss.schedule(queue, s.cron, {}, { tz: SITE.timeZone, missed: s.missed ?? "skip" });
     // Schedules fire at minute boundaries; a 15 s pickup keeps them on time with a third of the polling.
     await boss.work(queue, { pollingIntervalSeconds: 15 }, async () => recordRun(s.name, s.run));
   }
